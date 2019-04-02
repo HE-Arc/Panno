@@ -23,6 +23,12 @@ from matplotlib import pyplot as plt
 # RGB, HSV, 
 # Multi-résolution, si on trouve un élément à la même place pour chaque résolution on est sur qu'il existe
 
+currently_processed_img_name = ''
+
+def save(img, name):
+    pltImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    cv2.imwrite(name+'.png', pltImage)
+
 def hough_lines(img_src, img_dest):
     lines = cv2.HoughLines(img_src,1,np.pi/180.0, 150)
     ''' 
@@ -30,19 +36,18 @@ def hough_lines(img_src, img_dest):
     5th parameter : Minimum length of line
     6th parameter : Maximum allowed gap between line segments to treat them as single line
     '''
-    if lines:
-        for rho,theta in lines[0]:
-            a = np.cos(theta)
-            b = np.sin(theta)
-            x0 = a*rho
-            y0 = b*rho
-            x1 = int(x0 + 1000*(-b))
-            y1 = int(y0 + 1000*(a))
-            x2 = int(x0 - 1000*(-b))
-            y2 = int(y0 - 1000*(a))
-            cv2.line(img_dest,(x1,y1),(x2,y2),(255,0,255),5)
+    for rho,theta in lines[0]:
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a*rho
+        y0 = b*rho
+        x1 = int(x0 + 1000*(-b))
+        y1 = int(y0 + 1000*(a))
+        x2 = int(x0 - 1000*(-b))
+        y2 = int(y0 - 1000*(a))
+        cv2.line(img_dest,(x1,y1),(x2,y2),(255,0,255),5)
 
-        return img_dest
+    return img_dest
 
 def hough_lines_p(img_src, img_dest, minimum_length, max_gap):
     lines = cv2.HoughLinesP(img_src,1,np.pi/180.0, 150, minimum_length, max_gap)
@@ -62,48 +67,49 @@ def hough_lines_p(img_src, img_dest, minimum_length, max_gap):
     return img_dest
 
 def hough_circles(img_src, img_dest):
+    global currently_processed_img_name
+
     # FIXME: Trouver des bon ratio
     circles = cv2.HoughCircles(img_src, cv2.HOUGH_GRADIENT, 1.1, 35)
 
     # convert the (x, y) coordinates and radius of the circles to integers
     circles = np.round(circles[0, :]).astype("int")
 
+    # Fetch circles
+    idx = 0
     for (x, y, r) in circles:
         # draw the outer circle
         cv2.circle(img_dest, (x, y), r, (0, 255, 0), 4)
 
         # Crop circle
         crop_img = img_dest[y-r:y+r, x-r:x+r]
-        plt.imshow(crop_img)
-        plt.show()
-
-
+        save(crop_img, currently_processed_img_name+'_circle_'+ str(idx))
+        idx = idx + 1
+    
     return img_dest
 
-def show(img):
-    pltImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    plt.imshow(pltImage)
-    plt.show()
-
 # FIXME
-def analyse(img):
+def analyse(img, name):
+    global currently_processed_img_name
 
     height, width, channels = img.shape
     print(width)
     print(height)
 
+    # set name
+    currently_processed_img_name = name
+
     # Convert it to gray
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Normalize
-    imgNormalized = cv2.normalize(imgGray, None, 0, 255,cv2.NORM_MINMAX)
+    imgNormalized = cv2.normalize(imgGray, None, 0, 255, cv2.NORM_MINMAX)
 
     # Blur
     imgBlured = cv2.GaussianBlur(imgNormalized, (5, 5), 0)
 
     # Math morph
     kernel = np.ones((3,3),np.uint8)
-    #TODO: vérifier la taille du noyau pour les différentes tailles
 
     # Dilate normalized image, try also with erode
     dilate = cv2.dilate(imgBlured,kernel,iterations = 1)
@@ -117,8 +123,8 @@ def analyse(img):
     # Edge Fermeture
     imgGradient = cv2.morphologyEx(imgEdges, cv2.MORPH_GRADIENT, kernel)
 
-    # Show edges
-    show(imgGradient)
+    # save edges
+    save(imgGradient, currently_processed_img_name+'_edges')
 
     try:
         # Probabilistic Hough
@@ -136,7 +142,7 @@ def analyse(img):
     
 
     # Affichage
-    show(img)
+    save(img, currently_processed_img_name+'_hough')
 
     # TODO: segmentation
 
@@ -150,11 +156,11 @@ half = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
 quarter = cv2.resize(img, (0,0), fx=0.25, fy=0.25) 
 eight = cv2.resize(img, (0,0), fx=0.125, fy=0.125) 
 
-analyse(img)
-analyse(threequarter)
-analyse(half)
-analyse(quarter)
-analyse(eight)
+analyse(img, 'test_full')
+analyse(threequarter, 'test_threequarter')
+analyse(half, 'test_half')
+analyse(quarter, 'test_quarter')
+analyse(eight, 'test_eight')
 
 #analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\many.jpg')
 #analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\autobahn.png')
