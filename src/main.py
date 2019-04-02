@@ -99,7 +99,7 @@ def analyse(img):
     imgNormalized = cv2.normalize(imgGray, None, 0, 255,cv2.NORM_MINMAX)
 
     # Blur
-    imgBlured = cv2.medianBlur(imgNormalized, 5)
+    imgBlured = cv2.GaussianBlur(imgNormalized, (5, 5), 0)
 
     # Math morph
     kernel = np.ones((3,3),np.uint8)
@@ -145,12 +145,16 @@ def analyse(img):
 
 img = cv2.imread('C:\\Dev\\!Traitement_Images\\Panno\\images\\test.png')
 assert img is not None and img.size != 0, 'Invalid image'
+threequarter = cv2.resize(img, (0,0), fx=0.75, fy=0.75) 
 half = cv2.resize(img, (0,0), fx=0.5, fy=0.5) 
 quarter = cv2.resize(img, (0,0), fx=0.25, fy=0.25) 
+eight = cv2.resize(img, (0,0), fx=0.125, fy=0.125) 
 
 analyse(img)
+analyse(threequarter)
 analyse(half)
 analyse(quarter)
+analyse(eight)
 
 #analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\many.jpg')
 #analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\autobahn.png')
