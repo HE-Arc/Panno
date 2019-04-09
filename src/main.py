@@ -26,16 +26,19 @@ from matplotlib import pyplot as plt
 currently_processed_img_name = ''
 
 def save(img, name):
-    pltImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    cv2.imwrite(name+'.png', pltImage)
+    #pltImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # used for ploting
+    cv2.imwrite(name+'.png', img)
 
-def hough_lines(img_src, img_dest):
+def hough_lines(img_src, original):
     lines = cv2.HoughLines(img_src,1,np.pi/180.0, 150)
     ''' 
     4th parameter : Threshold
     5th parameter : Minimum length of line
     6th parameter : Maximum allowed gap between line segments to treat them as single line
     '''
+
+    img_dest = original[:,:].copy()
+
     for rho,theta in lines[0]:
         a = np.cos(theta)
         b = np.sin(theta)
@@ -49,13 +52,15 @@ def hough_lines(img_src, img_dest):
 
     return img_dest
 
-def hough_lines_p(img_src, img_dest, minimum_length, max_gap):
+def hough_lines_p(img_src, original, minimum_length, max_gap):
     lines = cv2.HoughLinesP(img_src,1,np.pi/180.0, 150, minimum_length, max_gap)
     ''' 
     4th parameter : Threshold
     5th parameter : Minimum length of line
     6th parameter : Maximum allowed gap between line segments to treat them as single line
     '''
+    
+    img_dest = original[:,:].copy()
     for var in lines:
         x1 = var[0][0]
         y1 = var[0][1]
@@ -66,8 +71,10 @@ def hough_lines_p(img_src, img_dest, minimum_length, max_gap):
     
     return img_dest
 
-def hough_circles(img_src, img_dest):
+def hough_circles(img_src, original):
     global currently_processed_img_name
+
+    img_dest = original[:,:].copy()
 
     # FIXME: Trouver des bon ratio
     circles = cv2.HoughCircles(img_src, cv2.HOUGH_GRADIENT, 1.1, 35)
@@ -78,12 +85,17 @@ def hough_circles(img_src, img_dest):
     # Fetch circles
     idx = 0
     for (x, y, r) in circles:
-        # draw the outer circle
-        cv2.circle(img_dest, (x, y), r, (0, 255, 0), 4)
 
         # Crop circle
-        crop_img = img_dest[y-r:y+r, x-r:x+r]
+        crop_img = original[y-r:y+r, x-r:x+r].copy()
+
+        # Export circle 
         save(crop_img, currently_processed_img_name+'_circle_'+ str(idx))
+
+        # draw the outer circle
+        cv2.circle(img_dest, (x, y), r, (0, 255, 0), 4)
+        
+        # Increment index
         idx = idx + 1
     
     return img_dest
@@ -130,21 +142,17 @@ def analyse(img, name):
         # Probabilistic Hough
         minimum_length = width/100.0
         max_gap = minimum_length - minimum_length * 0.25
-        img = hough_lines_p(imgGradient, img, minimum_length, max_gap)
+        img_hough_lines = hough_lines_p(imgGradient, img, minimum_length, max_gap)
+        save(img_hough_lines, currently_processed_img_name+'_hough_lines')
     except:
         print('can\'t perform hough (lines)')
 
     try:
         # Hough Circles
-        img = hough_circles(imgGradient, img)
+        img_hough_circles = hough_circles(imgGradient, img)
+        save(img_hough_circles, currently_processed_img_name+'_hough_circles')
     except:
         print('can\'t perform hough (circles)')
-    
-
-    # Affichage
-    save(img, currently_processed_img_name+'_hough')
-
-    # TODO: segmentation
 
 
 # ___ MAIN ___
@@ -156,11 +164,11 @@ half = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
 quarter = cv2.resize(img, (0,0), fx=0.25, fy=0.25) 
 eight = cv2.resize(img, (0,0), fx=0.125, fy=0.125) 
 
-analyse(img, 'test_full')
-analyse(threequarter, 'test_threequarter')
-analyse(half, 'test_half')
-analyse(quarter, 'test_quarter')
-analyse(eight, 'test_eight')
+analyse(img, 'output/test_full')
+analyse(threequarter, 'output/test_threequarter')
+analyse(half, 'output/test_half')
+analyse(quarter, 'output/test_quarter')
+analyse(eight, 'output/test_eight')
 
 #analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\many.jpg')
 #analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\autobahn.png')
