@@ -1,0 +1,12 @@
+# Idées d'améliorations
+---
+## Valider un cercle détecté
+---
+Pour de meilleurs résultats, vérifier le taux de variation de couleur des pixels
+Le panneau doit être composé principale d'une couleur et de blanc.
+Toutes variations ou présence de toutes les couleurs est une détection invalide -> TODO
+
+## Limiter les erreurs
+---
+Effectuer un prétraitement pour obtenir que les bleus, que les rouges et que les verts tour à tour pour mieux identifier les panneaux
+L'idée serait de pouvoir trouver une bordure avec x (noir|gris) (r|g|b) et x étant n'importe quelle couleur. Cela permetterait d'isoler les variations fortes de couleurs
