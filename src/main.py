@@ -20,7 +20,7 @@ from matplotlib import pyplot as plt
 # TODO: Appliquer les algos sur des zones de couleurs vives
 # FIXME: Améliorer avec des analyses par couleur, exemple : Hough sur le bleu
 
-# RGB, HSV, 
+# RGB, HSV,
 # Multi-résolution, si on trouve un élément à la même place pour chaque résolution on est sur qu'il existe
 
 currently_processed_img_name = ''
@@ -31,7 +31,7 @@ def save(img, name):
 
 def hough_lines(img_src, original):
     lines = cv2.HoughLines(img_src,1,np.pi/180.0, 150)
-    ''' 
+    '''
     4th parameter : Threshold
     5th parameter : Minimum length of line
     6th parameter : Maximum allowed gap between line segments to treat them as single line
@@ -54,12 +54,12 @@ def hough_lines(img_src, original):
 
 def hough_lines_p(img_src, original, minimum_length, max_gap):
     lines = cv2.HoughLinesP(img_src,1,np.pi/180.0, 150, minimum_length, max_gap)
-    ''' 
+    '''
     4th parameter : Threshold
     5th parameter : Minimum length of line
     6th parameter : Maximum allowed gap between line segments to treat them as single line
     '''
-    
+
     img_dest = original[:,:].copy()
     for var in lines:
         x1 = var[0][0]
@@ -68,7 +68,7 @@ def hough_lines_p(img_src, original, minimum_length, max_gap):
         y2 = var[0][3]
 
         cv2.line(img_dest,(x1,y1),(x2,y2),(255,0,255),5)
-    
+
     return img_dest
 
 def hough_circles(img_src, original):
@@ -89,15 +89,15 @@ def hough_circles(img_src, original):
         # Crop circle
         crop_img = original[y-r:y+r, x-r:x+r].copy()
 
-        # Export circle 
+        # Export circle
         save(crop_img, currently_processed_img_name+'_circle_'+ str(idx))
 
         # draw the outer circle
         cv2.circle(img_dest, (x, y), r, (0, 255, 0), 4)
-        
+
         # Increment index
         idx = idx + 1
-    
+
     return img_dest
 
 # FIXME
@@ -128,7 +128,7 @@ def analyse(img, name):
 
     # Ouverture
     imgOpening = cv2.morphologyEx(dilate, cv2.MORPH_OPEN, kernel)
-    
+
     # Canny (Edge)
     imgEdges = cv2.Canny(imgOpening, 150, 220)
 
@@ -159,10 +159,10 @@ def analyse(img, name):
 
 img = cv2.imread('C:\\Dev\\!Traitement_Images\\Panno\\images\\test.png')
 assert img is not None and img.size != 0, 'Invalid image'
-threequarter = cv2.resize(img, (0,0), fx=0.75, fy=0.75) 
-half = cv2.resize(img, (0,0), fx=0.5, fy=0.5) 
-quarter = cv2.resize(img, (0,0), fx=0.25, fy=0.25) 
-eight = cv2.resize(img, (0,0), fx=0.125, fy=0.125) 
+threequarter = cv2.resize(img, (0,0), fx=0.75, fy=0.75)
+half = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
+quarter = cv2.resize(img, (0,0), fx=0.25, fy=0.25)
+eight = cv2.resize(img, (0,0), fx=0.125, fy=0.125)
 
 analyse(img, 'output/test_full')
 analyse(threequarter, 'output/test_threequarter')
