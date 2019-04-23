@@ -62,7 +62,6 @@ def cut_green(img, criteria="max"):
 
 def bilateral_filter(img):
     (h, w) = img.shape[:2]
-    n = min(h,w)
     return cv2.bilateralFilter(img,30,50,50)
 
 def save(img, name):
@@ -154,8 +153,10 @@ def analyse(imglist, name):
         currently_processed_img_name = name
         save(img, f"{i}0-original")
 
-        img2 = bilateral_filter(cut_green(img, criteria="max"))
-        save(img2, f"{i}1-cut_and_bilblur")
+        img2 = cut_green(img, criteria="max")
+        save(img2, f"{i}1-cut")
+        img2 = bilateral_filter(img2)
+        save(img2, f"{i}2-bilblur")
         # Convert it to gray
         #img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
         #save(img2, f"{i}2-gray")
