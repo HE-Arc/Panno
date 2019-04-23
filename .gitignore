@@ -106,7 +106,7 @@ venv.bak/
 
 # LaTeX
 *.toc
-*.synctex.gez
+*.synctex.gz
 *.log
 *.aux
 *.out
