@@ -64,12 +64,17 @@ def bilateral_filter(img):
     (h, w) = img.shape[:2]
     return cv2.bilateralFilter(img,30,50,50)
 
-def save(img, name):
+def save(img, path, name):
+    global currently_processed_img_name
+    path = currently_processed_img_name + path
+
+    if not os.path.exists(path):
+        os.makedirs(path)
     #pltImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # used for ploting
-    cv2.imwrite(name+'.png', img)
+    cv2.imwrite(path + name +'.png', img)
 
 def hough_lines(img_src, original):
-    lines = cv2.HoughLines(img_src,1,np.pi/180.0, 150)
+    lines = cv2.HoughLines(img_src,1,np.pi/180.0, 50)
     '''
     4th parameter : Threshold
     5th parameter : Minimum length of line
@@ -92,7 +97,7 @@ def hough_lines(img_src, original):
     return img_dest
 
 def hough_lines_p(img_src, original, minimum_length, max_gap):
-    lines = cv2.HoughLinesP(img_src,1,np.pi/180.0, 150, minimum_length, max_gap)
+    lines = cv2.HoughLinesP(img_src,1,np.pi/180.0, 25, minimum_length, max_gap)
     '''
     4th parameter : Threshold
     5th parameter : Minimum length of line
@@ -115,9 +120,9 @@ def hough_circles(img_src, original, index):
 
     img_dest = original[:,:].copy()
     (h, w) = img_dest.shape[:2]
-    max_radius = int(min(w,h)/4)
+    max_radius = int(min(w,h)/3)
     # FIXME: Trouver des bon ratio
-    circles = cv2.HoughCircles(img_src, cv2.HOUGH_GRADIENT, 3.0, 50, maxRadius=max_radius)
+    circles = cv2.HoughCircles(img_src, cv2.HOUGH_GRADIENT, 3.0, max_radius, maxRadius=max_radius)
 
     # convert the (x, y) coordinates and radius of the circles to integers
     circles = np.round(circles[0, :]).astype("int")
@@ -130,10 +135,35 @@ def hough_circles(img_src, original, index):
         crop_img = original[y-r:y+r, x-r:x+r].copy()
 
         # Export circle
-        #save(crop_img, f'{index}10-circle-{idx}')
+        save(crop_img, f"{index}/", f"circle-{idx}")
 
         # draw the outer circle
         cv2.circle(img_dest, (x, y), r, (0, 255, 0), 4)
+
+        # Increment index
+        idx = idx + 1
+
+    return img_dest
+
+def contour(img_src, original, index, min_size):
+    contours, hierarchy = cv2.findContours(img_src, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    img_dest = original[:,:].copy()
+
+    idx = 0
+    for cnt in contours:
+        x,y,w,h = cv2.boundingRect(cnt)
+
+        if w < min_size or h < min_size:
+            continue
+
+        cv2.rectangle(img_dest,(x,y),(x+w,y+h),(0,255,0),1)
+
+        # Crop circle
+        crop_img = original[y:y+h, x:x+w].copy()
+
+        # Export contours
+        save(crop_img, f"{index}/", f"contour-{idx}")
 
         # Increment index
         idx = idx + 1
@@ -151,65 +181,65 @@ def analyse(imglist, name):
 
         # set name
         currently_processed_img_name = name
-        save(img, f"{i}0-original")
+        save(img, f"{i}/", "0-original")
 
-        img2 = cut_green(img, criteria="max")
-        save(img2, f"{i}1-cut")
-        img2 = bilateral_filter(img2)
-        save(img2, f"{i}2-bilblur")
-        # Convert it to gray
-        #img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-        #save(img2, f"{i}2-gray")
-        # Normalize
-        #img2 = cv2.normalize(img2, None, 0, 255, cv2.NORM_MINMAX)
-        #save(img2, f"{i}3-normalize")
+
+        img2 = bilateral_filter(cut_green(img, criteria="max"))
+        save(img2, f"{i}/", "1-cut_and_bilblur")
 
         b,g,r = cv2.split(img)
         r = cv2.subtract(cv2.subtract(r,b),g)
         b = cv2.subtract(cv2.subtract(b,r),g)
-        save(r, f"{i}2-RED")
-        save(b, f"{i}2-BLUE")
+        save(r, f"{i}/", "2-RED")
+        save(b, f"{i}/", "2-BLUE")
 
         retval, r_T = cv2.threshold(r, 50, 255, cv2.THRESH_BINARY)
-        save(r_T, f"{i}3-threshold-RED")
+        save(r_T, f"{i}/", "3-threshold-RED")
         retval, b_T = cv2.threshold(b, 50, 255, cv2.THRESH_BINARY)
-        save(b_T, f"{i}3-threshold-BLUE")
+        save(b_T, f"{i}/", "3-threshold-BLUE")
 
         img_redblue = cv2.add(r_T,b_T)
-        save(img_redblue, f"{i}4-redblue")
+        save(img_redblue, f"{i}/", "4-redblue")
 
         # Math morph
         kernel = np.ones((3,3),np.uint8)
 
         # Dilate normalized image, try also with erode
         img2 = cv2.dilate(img_redblue,kernel,iterations = 3)
-        save(img2, f"{i}5-dilate")
+        save(img2, f"{i}/", "5-dilate")
 
         # Ouverture
         img2 = cv2.morphologyEx(img2, cv2.MORPH_OPEN, kernel)
-        save(img2, f"{i}6-morphologyEx")
+        save(img2, f"{i}/", "6-morphologyEx")
 
         # Canny (Edge)
         img2 = cv2.Canny(img2, 150, 220)
-        save(img2, f"{i}7-Canny")
+        save(img2, f"{i}/", "7-Canny")
 
         # Edge Fermeture
         img2 = cv2.morphologyEx(img2, cv2.MORPH_GRADIENT, kernel)
-        save(img2, f"{i}8-morphologyEx")
-
-        # save edges
-        ##save(img2, f'test{i}')
+        save(img2, f"{i}/", "8-morphologyEx")
 
         # Probabilistic Hough
-        #minimum_length = max(w,h)/100.0
-        #max_gap = minimum_length - minimum_length * 0.25
-        #img_hough_lines = hough_lines_p(img2, img, minimum_length, max_gap)
-        #save(img_hough_lines, f'test{i}_hough_lines')
+        minimum_length = min(w,h)/25.0
+        max_gap = minimum_length - minimum_length * 0.25
+        try:
+            img_hough_lines = hough_lines_p(img2, img, minimum_length, max_gap)
+            save(img_hough_lines, f"{i}/", "9-hough_lines")
+        except:
+            print(f"Can't process HoughLines for image {i}")
+
+        # Contour
+        try:
+            img_contour = contour(img2, img, i, minimum_length)
+            save(img_contour, f"{i}/", "10-contour")
+        except:
+            print(f"Can't process contour for image {i}")
 
         # Hough Circles
         try:
             img_hough_circles = hough_circles(img2, img, i)
-            save(img_hough_circles, f"{i}9-hough_circles")
+            save(img_hough_circles, f"{i}/", "11-hough_circles")
         except:
             print(f"Can't process HoughCircles for image {i}")
 
@@ -218,21 +248,8 @@ def analyse(imglist, name):
 
 # ___ MAIN ___
 
-original_images = load_images_from_folder("../images/true")
+original_images = load_images_from_folder("images/true")
 assert original_images is not None and len(original_images) != 0, 'Invalid image'
-threequarter = resize(original_images, 0.75)
-half = resize(original_images, 0.5)
-quarter = resize(original_images, 0.25)
-eight = resize(original_images, 0.125)
-
-analyse(original_images, 'output/test_full')
-#analyse(threequarter, 'output/test_threequarter')
-#analyse(half, 'output/test_half')
-#analyse(quarter, 'output/test_quarter')
-#analyse(eight, 'output/test_eight')
-
-#analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\many.jpg')
-#analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\autobahn.png')
-#analyse('C:\\Dev\\!Traitement_Images\\Panno\\images\\yellow_roadsign.jpg')
+analyse(original_images, './output/test_full/')
 
 cv2.destroyAllWindows()
