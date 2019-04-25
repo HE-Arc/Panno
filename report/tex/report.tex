@@ -175,8 +175,37 @@ La suite de l'algorithme consiste à séparer les composante bleue et rouge à l
 La suite de l'algorithme est celle déjà présente dans la partie détection du panneau.
 
 
-\section{Partie détection (Recherche du panneau dans une image classifiée "avec panneau"}
-\subsection{Première itération}
+\section{Partie détection (Recherche du panneau dans une image classifiée prétraitée}
+\subsection{Fonctionnement}
+Une fois l'image prétraitée celle-ci est passée au travers de 3 analyseurs pour découper les régions possédant probablement un panneau.
+\begin{itemsize}
+\item[-] Cercles de Hough
+\item[-] Lignes probabilistiques de Hough
+\item[-] Détection de contour
+\end{itemsize}
+La recherche des cercles permet de détecter les panneaux ronds, cette méthode est relativement fiable et permet de détecter, dans la plupart des cas un panneau dans divers environnements.
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.7\textwidth]{../img/11-hough_circles.png}
+\caption{Détection du panneau de limitation de vitesse}
+\end{figure}
+
+La deuxième méthode donnant les meilleurs est la détection de contour fourni par OpenCV.
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.7\textwidth]{../img/10-contour.png}
+\caption{Détection des panneauxl}
+\end{figure}
+
+Pour chaque cercle ou région détectée, la zone est découpée dans l'image original et exportée dans un dossier.
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.7\textwidth]{../img/10-contour.png}
+\caption{Extraction du panneau}
+\end{figure}
+
+\subsection{Etapes de recherches}
+\subsubsection{Première itération}
 Développement de l'algorithme de base. 
 \begin{itemize}
 \item[-] Normalisation de l'image
@@ -185,7 +214,7 @@ Développement de l'algorithme de base.
 \item[-] Gradient avec le même kernel
 \end{itemize}
 
-\subsection{Deuxième itération}
+\subsubsection{Deuxième itération}
 \begin{itemize}
 \item[-] Ajout d'un filtre median avant la normalisation
 \item[-] Réduction de la taille du kernel à (3, 3)
@@ -195,26 +224,29 @@ Développement de l'algorithme de base.
 \item[-] Fermeture
 \end{itemize}
 
-\subsection{Troisième itération (Ajout de Hough)}
+\subsubsection{Troisième itération (Ajout de Hough)}
 \begin{itemize}
 \item[-] Ajout de Hough pour détecter les contours
 \item[-] Essaies avec diverses valeurs pour trouver les meilleures paramètres
 \item[-] Utilisation d'une image de qualité (4k original)
 \end{itemize}
 
-\subsection{Ajout du crop}
+\subsubsection{Ajout du crop}
 \begin{itemize}
 \item[-] Ajout du découpage des régions intéressantes (Cercles uniquement dans un premier temps)
 \item[-] Remplacement du filtre médian par un filtre gaussien pour de meilleurs résultats
 \item[-] Ajout d'une méthode pour enregistrer les images
 \end{itemize}
 
-%## TODO
-%Ajouter les résultats intermédiaires et les observations
-
+\subsubsection{Ajout de la détection de contour}
+\begin{itemize}
+\item[-] Ajout des méthodes OpenCV permettant de découper des régions détourées depuis les images prétraitées
+\item[-] Mise en place d'une structure de dossier pour la sortie des analyses
+\end{itemize}
 
 \chapter{Résultats}
 Les résultats sur les images testées sont plutôt convainquant, tous les panneaux ronds et isolés sont détectés par la méthode de Hough s'ils ont une taille suffisamment grande.
+Les panneaux rectangulaires et mêmes ronds sont également relativement biens détectés par la méthode de détection de contour d'OpenCV avec les images prétraitées.
 
 \section{Cercle de Hough}
 \begin{figure}[!h]
